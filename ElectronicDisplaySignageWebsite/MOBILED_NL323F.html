@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
+    <title>Create Signage - EDS.NET | your Electronic Display Signage creator</title>
+    <style>
+        body {
+            margin: 0;
+            background: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+        }
+
+        .matrix-panel {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+            margin: 0;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(158, 7px);
+            grid-template-rows: repeat(19, 7px);
+            width: calc(158 * 7px);
+            height: calc(19 * 7px);
+            background: #000;
+            border: 1px solid #2d3748;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .pixel {
+            width: 7px;
+            height: 7px;
+            background: #000000;
+            border-radius: 50%;
+            transform: scale(0.8);
+            transform-origin: center;
+        }
+
+        .pixel.on {
+            background: #ff9900;
+            box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .caption {
+            color: #d1d5db;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin-right: 6px;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 20;
+            background: #1f2937;
+            color: #fff;
+            border: 1px solid #4b5563;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .mode-btn {
+            position: fixed;
+            top: 12px;
+            left: 110px;
+            z-index: 20;
+            background: #111827;
+            color: #fff;
+            border: 1px solid #4b5563;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .color-row {
+            position: fixed;
+            top: 12px;
+            left: 210px;
+            z-index: 20;
+            display: flex;
+            gap: 6px;
+        }
+
+        .color-btn {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .color-btn.selected {
+            box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #ffffff;
+        }
+
+        .zoom-btn {
+            position: fixed;
+            top: 12px;
+            left: 320px;
+            z-index: 20;
+            background: #111827;
+            color: #fff;
+            border: 1px solid #4b5563;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .erase-size-row {
+            position: fixed;
+            top: 12px;
+            left: 420px;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .erase-size-btn {
+            background: #111827;
+            color: #fff;
+            border: 1px solid #4b5563;
+            border-radius: 999px;
+            padding: 8px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .erase-size-value {
+            min-width: 32px;
+            text-align: center;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .keypad-panel {
+            position: fixed;
+            top: 52px;
+            left: 210px;
+            z-index: 21;
+            display: none;
+            grid-template-columns: repeat(3, 44px);
+            gap: 8px;
+            background: #111827;
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .keypad-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            background: #1f2937;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .keypad-display {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 8px;
+            text-align: right;
+            font-size: 14px;
+            min-height: 18px;
+            box-sizing: border-box;
+        }
+
+        .keypad-actions {
+            display: flex;
+            gap: 8px;
+            grid-column: 1 / span 3;
+        }
+
+        .keypad-actions button {
+            flex: 1;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            background: #1f2937;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .bottom-panels {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            margin-left: 0;
+        }
+
+        .mini-panel {
+            display: grid;
+            grid-template-columns: repeat(91, 5px);
+            grid-template-rows: repeat(17, 5px);
+            width: calc(91 * 5px);
+            height: calc(17 * 5px);
+            background: #000;
+            border: 1px solid #2d3748;
+        }
+
+        .mini-panel.small {
+            grid-template-columns: repeat(33, 5px);
+            grid-template-rows: repeat(17, 5px);
+            width: calc(33 * 5px);
+            height: calc(17 * 5px);
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-btn" id="toggleBtn">Draw: Off</button>
+    <button class="mode-btn" id="modeBtn">Mode: Draw</button>
+    <div class="color-row" id="colorRow">
+        <button class="color-btn" data-color="#ff0000" style="background:#ff0000"></button>
+        <button class="color-btn" data-color="#ff9900" style="background:#ff9900"></button>
+        <button class="color-btn" data-color="#1e90ff" style="background:#1e90ff"></button>
+        <button class="color-btn" data-color="#ffff00" style="background:#ffff00"></button>
+        <button class="color-btn" data-color="#ffffff" style="background:#ffffff"></button>
+    </div>
+    <div class="keypad-panel" id="keypadPanel">
+        <div class="keypad-display" id="keypadDisplay">0</div>
+        <button class="keypad-btn">1</button>
+        <button class="keypad-btn">2</button>
+        <button class="keypad-btn">3</button>
+        <button class="keypad-btn">4</button>
+        <button class="keypad-btn">5</button>
+        <button class="keypad-btn">6</button>
+        <button class="keypad-btn">7</button>
+        <button class="keypad-btn">8</button>
+        <button class="keypad-btn">9</button>
+        <button class="keypad-btn">0</button>
+        <button class="keypad-btn">.</button>
+        <button class="keypad-btn" id="keypadBackspace">⌫</button>
+        <div class="keypad-actions">
+            <button id="keypadClear">Clear</button>
+            <button id="keypadEnter">Enter</button>
+        </div>
+    </div>
+    <button class="zoom-btn" id="zoomBtn">Zoom: Off</button>
+    <div class="erase-size-row">
+        <button class="erase-size-btn" id="eraseSizeMinus">−</button>
+        <span class="erase-size-value" id="eraseSizeValue">2</span>
+        <button class="erase-size-btn" id="eraseSizePlus">+</button>
+    </div>
+
+    <div class="matrix-panel">
+        <div class="caption">front eds</div>
+        <div class="matrix" id="matrix"></div>
+    </div>
+
+    <div class="bottom-panels" style="left: 0; top: calc(50% + (19 * 6px / 2) + 18px);">
+        <div class="mini-panel" id="panel91"></div>
+        <div class="mini-panel small" id="panel33"></div>
+    </div>
+
+    <script>
+        const matrix = document.getElementById('matrix');
+        const panel91 = document.getElementById('panel91');
+        const panel33 = document.getElementById('panel33');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const modeBtn = document.getElementById('modeBtn');
+        const zoomBtn = document.getElementById('zoomBtn');
+        const eraseSizeMinus = document.getElementById('eraseSizeMinus');
+        const eraseSizePlus = document.getElementById('eraseSizePlus');
+        const eraseSizeValue = document.getElementById('eraseSizeValue');
+        const colorRow = document.getElementById('colorRow');
+        const keypadPanel = document.getElementById('keypadPanel');
+        const keypadDisplay = document.getElementById('keypadDisplay');
+        const keypadButtons = document.querySelectorAll('.keypad-btn');
+        const keypadClear = document.getElementById('keypadClear');
+        const keypadEnter = document.getElementById('keypadEnter');
+        const colorButtons = document.querySelectorAll('.color-btn');
+        const total = 158 * 19;
+        const pixels = [];
+        const panel91Pixels = [];
+        const panel33Pixels = [];
+        let isDrawing = false;
+        let drawEnabled = false;
+        let mode = 'draw';
+        let currentColor = '#ff9900';
+        let zoomEnabled = false;
+        let eraseSize = 2;
+        let history = [];
+        let historyIndex = -1;
+
+        function colorName(value) {
+            return value === '#ff0000' ? 'Red'
+                : value === '#ff9900' ? 'Orange'
+                : value === '#1e90ff' ? 'Blue'
+                : value === '#ffff00' ? 'Yellow'
+                : 'White';
+        }
+
+        function updateModeLabel() {
+            if (mode === 'draw') {
+                modeBtn.textContent = 'Mode: Draw';
+            } else if (mode === 'erase') {
+                modeBtn.textContent = 'Mode: Erase';
+            } else if (mode === 'color') {
+                modeBtn.textContent = `Mode: Color (${colorName(currentColor)})`;
+            } else {
+                modeBtn.textContent = 'Mode: Keypad';
+            }
+        }
+
+        function setPixelVisual(pixel, on, color) {
+            pixel.classList.toggle('on', on);
+            pixel.dataset.color = color;
+            pixel.style.background = on ? color : '#000000';
+        }
+
+        function saveState() {
+            const state = {
+                main: pixels.map(pixel => ({
+                    on: pixel.classList.contains('on'),
+                    color: pixel.dataset.color || currentColor
+                })),
+                panel91: panel91Pixels.map(pixel => ({
+                    on: pixel.classList.contains('on'),
+                    color: pixel.dataset.color || currentColor
+                })),
+                panel33: panel33Pixels.map(pixel => ({
+                    on: pixel.classList.contains('on'),
+                    color: pixel.dataset.color || currentColor
+                }))
+            };
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            history.push(state);
+            historyIndex = history.length - 1;
+        }
+
+        function applyBlock(targetPixels, stateItems, defaultColor) {
+            targetPixels.forEach((pixel, i) => {
+                const item = stateItems[i] || {};
+                const on = !!item.on;
+                const color = item.color || defaultColor;
+                setPixelVisual(pixel, on, color);
+            });
+        }
+
+        function applyState(state) {
+            applyBlock(pixels, state.main || [], currentColor);
+            applyBlock(panel91Pixels, state.panel91 || [], currentColor);
+            applyBlock(panel33Pixels, state.panel33 || [], currentColor);
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                applyState(history[historyIndex]);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                applyState(history[historyIndex]);
+            }
+        }
+
+        function toggleMode() {
+            const modes = ['draw', 'erase', 'color', 'keypad'];
+            const next = modes[(modes.indexOf(mode) + 1) % modes.length];
+            mode = next;
+            colorRow.style.display = (mode === 'color') ? 'flex' : 'none';
+            keypadPanel.style.display = (mode === 'keypad') ? 'grid' : 'none';
+            document.querySelector('.erase-size-row').style.display = (mode === 'erase') ? 'flex' : 'none';
+            updateModeLabel();
+        }
+
+        function updateEraseSizeDisplay() {
+            eraseSizeValue.textContent = eraseSize;
+        }
+
+        function changeEraseSize(delta) {
+            const next = Math.min(20, Math.max(2, eraseSize + delta));
+            eraseSize = next;
+            updateEraseSizeDisplay();
+        }
+
+        function updateKeypadDisplay(value) {
+            keypadDisplay.textContent = value;
+        }
+
+        function clearKeypadInput() {
+            updateKeypadDisplay('0');
+        }
+
+        function handleKeypadInput(value) {
+            if (value === '⌫') {
+                const current = keypadDisplay.textContent;
+                if (current.length <= 1) {
+                    updateKeypadDisplay('0');
+                } else {
+                    updateKeypadDisplay(current.slice(0, -1));
+                }
+                return;
+            }
+
+            if (value === 'Enter') {
+                const text = keypadDisplay.textContent;
+                if (text !== '0') {
+                    updateKeypadDisplay(text);
+                }
+                return;
+            }
+
+            let current = keypadDisplay.textContent;
+            if (current === '0' || current === '0.') {
+                current = '';
+            }
+            const next = current + value;
+            if (next.length <= 12) {
+                updateKeypadDisplay(next === '' ? '0' : next);
+            }
+        }
+
+        function toggleZoom() {
+            zoomEnabled = !zoomEnabled;
+            zoomBtn.textContent = zoomEnabled ? 'Zoom: On' : 'Zoom: Off';
+            document.body.style.cursor = zoomEnabled ? 'zoom-in' : 'default';
+        }
+
+        function inBounds(x, y, width, height) {
+            return x >= 0 && y >= 0 && x < width && y < height;
+        }
+
+        function getShapeIndex(x, y, size, width, height) {
+            if (size <= 2) return (Math.abs(x) <= 0 && Math.abs(y) <= 0) ? 1 : 0;
+            const radius = size - 1;
+            return Math.abs(x) <= radius && Math.abs(y) <= radius ? 1 : 0;
+        }
+
+        function eraseAround(pixel, targetPixels, width, height) {
+            const index = targetPixels.indexOf(pixel);
+            if (index === -1) return;
+            const x = index % width;
+            const y = Math.floor(index / width);
+            for (let dy = -eraseSize; dy <= eraseSize; dy++) {
+                for (let dx = -eraseSize; dx <= eraseSize; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (!inBounds(nx, ny, width, height)) continue;
+                    const shape = getShapeIndex(dx, dy, eraseSize, width, height);
+                    if (shape === 1) {
+                        const targetIndex = ny * width + nx;
+                        const target = targetPixels[targetIndex];
+                        if (target) {
+                            setPixelVisual(target, false, '#000000');
+                        }
+                    }
+                }
+            }
+        }
+
+        function togglePixel(pixel) {
+            if (mode === 'erase') {
+                if (pixel.parentElement === matrix) {
+                    eraseAround(pixel, pixels, 158, 19);
+                } else if (pixel.parentElement === panel91) {
+                    eraseAround(pixel, panel91Pixels, 91, 17);
+                } else if (pixel.parentElement === panel33) {
+                    eraseAround(pixel, panel33Pixels, 33, 17);
+                }
+            } else if (mode === 'keypad') {
+                return;
+            } else {
+                setPixelVisual(pixel, true, currentColor);
+            }
+        }
+
+        function attachPixelEvents(pixel) {
+            pixel.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0 || zoomEnabled || mode === 'keypad') return;
+                isDrawing = true;
+                togglePixel(pixel);
+                saveState();
+            });
+
+            pixel.addEventListener('pointerenter', (e) => {
+                if (zoomEnabled || mode === 'keypad' || !isDrawing || !(e.buttons & 1)) return;
+                togglePixel(pixel);
+            });
+        }
+
+        function buildPanel(panel, width, height, pixelArray) {
+            for (let i = 0; i < width * height; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'pixel';
+                dot.style.width = '5px';
+                dot.style.height = '5px';
+                dot.style.transform = 'scale(0.9)';
+                dot.dataset.color = currentColor;
+                pixelArray.push(dot);
+                attachPixelEvents(dot);
+                panel.appendChild(dot);
+            }
+        }
+
+        for (let i = 0; i < total; i++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            pixel.dataset.color = currentColor;
+            pixels.push(pixel);
+            attachPixelEvents(pixel);
+            matrix.appendChild(pixel);
+        }
+
+        buildPanel(panel91, 91, 17, panel91Pixels);
+        buildPanel(panel33, 33, 17, panel33Pixels);
+
+        function setColor(color) {
+            currentColor = color;
+            colorButtons.forEach(button => {
+                button.classList.toggle('selected', button.dataset.color === currentColor);
+            });
+            updateModeLabel();
+        }
+
+        saveState();
+        setColor(currentColor);
+        updateEraseSizeDisplay();
+        colorRow.style.display = 'none';
+        keypadPanel.style.display = 'none';
+        document.querySelector('.erase-size-row').style.display = 'none';
+        updateModeLabel();
+
+        toggleBtn.addEventListener('click', () => {
+            drawEnabled = !drawEnabled;
+            toggleBtn.textContent = drawEnabled ? 'Draw: On' : 'Draw: Off';
+        });
+
+        modeBtn.addEventListener('click', toggleMode);
+        zoomBtn.addEventListener('click', toggleZoom);
+        eraseSizeMinus.addEventListener('click', () => changeEraseSize(-1));
+        eraseSizePlus.addEventListener('click', () => changeEraseSize(1));
+
+        colorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setColor(button.dataset.color);
+            });
+        });
+
+        keypadButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.id === 'keypadBackspace') {
+                    handleKeypadInput('⌫');
+                } else if (button.id === 'keypadClear') {
+                    clearKeypadInput();
+                } else if (button.id === 'keypadEnter') {
+                    handleKeypadInput('Enter');
+                } else {
+                    handleKeypadInput(button.textContent.trim());
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDrawing = false;
+        });
+    </script>
+</body>
+</html>
